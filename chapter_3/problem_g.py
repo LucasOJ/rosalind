@@ -35,25 +35,23 @@ def get_path_start_node(adj_map: Dict[str, Set[str]]) -> str:
             return node
     raise Exception("No nodes with greater out degree than in degree")
 
-# Returns reversed Euler Path/Cycle starting from a given node in the graph specified by the given adjacency_map
+# Returns reversed Euler Path starting from a given node in the graph specified by the given adjacency_map
+# Once a node has been traversed, it will have no neighbours left
 def traverse_from_node(adj_map: Dict[str, Set[str]], node: str) -> List[str]:
     # In case the node has no neighbours
     if not (node in adj_map):
         return [node]
     
-    # Copy neighbourhood since we can't iterate something that's being modified
-    # TODO: This is probably inefficient - how to remove?
-    # Keep track of visited nodes?
-    neighbourhood = list(adj_map[node])
-    
     traversal = []
 
-    for adj_node in neighbourhood:
-        # May have already visited adj_node as part of another neighbour's traversal
-        if (adj_node in adj_map[node]):
-            adj_map[node].remove(adj_node)
-            adj_traversal = traverse_from_node(adj_map, adj_node)
-            traversal.extend(adj_traversal)
+    neighbourhood = adj_map[node]
+
+    # Traverse all neighbours until there are none left
+    while len(neighbourhood) > 0:
+        neighbour = neighbourhood.pop()
+        # This traversal may remove other direct neighbours of `node`
+        adj_traversal = traverse_from_node(adj_map, neighbour)
+        traversal.extend(adj_traversal)
         
     traversal.append(node)
     return traversal
