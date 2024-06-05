@@ -1,12 +1,12 @@
 # https://rosalind.info/problems/ba3g/
 
-from typing import List, Dict, Set
+from typing import List, Dict
 
-def adj_list_to_adj_map(adj_list: List[str]) -> Dict[str, Set[str]]:
+def adj_list_to_adj_map(adj_list: List[str]) -> Dict[str, List[str]]:
     adj_map = {}
     for mapping_str in adj_list:
         [source, destinations_str] = mapping_str.split(" -> ")
-        destinations = set(destinations_str.split(","))
+        destinations = destinations_str.split(",")
         adj_map[source] = destinations
     return adj_map
 
@@ -20,7 +20,7 @@ def try_add_default_stats_for_node(node: str, degree_stats: Dict[str, Dict]):
 
 # Looks for unbalanced nodes
 # Assumes unique unbalanced "start" and "end" nodes
-def get_path_start_node(adj_map: Dict[str, Set[str]]) -> str:
+def get_path_start_node(adj_map: Dict[str, List[str]]) -> str:
     degree_stats_map = {}
     for (source, destinations) in adj_map.items():
         try_add_default_stats_for_node(source, degree_stats_map)
@@ -36,26 +36,35 @@ def get_path_start_node(adj_map: Dict[str, Set[str]]) -> str:
     raise Exception("No nodes with greater out degree than in degree")
 
 # Returns reversed Euler Path starting from a given node in the graph specified by the given adjacency_map
-# Once a node has been traversed, it will have no neighbours left
-def traverse_from_node(adj_map: Dict[str, Set[str]], node: str) -> List[str]:
-    # In case the node has no neighbours
-    if not (node in adj_map):
-        return [node]
-    
+def traverse_from_node(adj_map: Dict[str, List[str]], start_node: str) -> List[str]:
     traversal = []
+    stack = [start_node]
+    while len(stack) > 0:
+        # Get node at the top of the stack
+        current_node = stack[-1]
 
-    neighbourhood = adj_map[node]
+        if current_node in adj_map:
+            neighbourhood = adj_map[current_node]
+            if len(neighbourhood) > 0:
+                # If the current node has a neighbour left ...
 
-    # Traverse all neighbours until there are none left
-    while len(neighbourhood) > 0:
-        neighbour = neighbourhood.pop()
-        # This traversal may remove other direct neighbours of `node`
-        adj_traversal = traverse_from_node(adj_map, neighbour)
-        traversal.extend(adj_traversal)
+                # ... remove the connecting edge from the graph ... 
+                neighbour = neighbourhood.pop()
+                
+                # and visit the neighbour
+                stack.append(neighbour)
+
+                continue
         
-    traversal.append(node)
+        # If the current node has no neighbours left
+        traversal.append(current_node)
+        stack.pop()
+    
     return traversal
 
+def get_euler_path(adj_map: Dict[str, List[str]]):
+    path_start_node = get_path_start_node(adj_map)
+    return reversed(traverse_from_node(adj_map, path_start_node))
 
 adj_list = [
     "0 -> 2",
@@ -69,8 +78,7 @@ adj_list = [
 ]
 
 adj_map = adj_list_to_adj_map(adj_list)
-path_start_node = get_path_start_node(adj_map)
-traversal = reversed(traverse_from_node(adj_map, path_start_node))
-print("->".join(traversal))
+euler_path = get_euler_path(adj_map)
+print("->".join(euler_path))
 
 
